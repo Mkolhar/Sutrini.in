@@ -1,0 +1,141 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import api from '@/lib/api';
+import { Product } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Plus, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
+
+export default function ProductsPage() {
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
+
+    const fetchProducts = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get('/products');
+            setProducts(response.data);
+        } catch (error) {
+            console.error('Failed to fetch products', error);
+            // Mock data incase backend is down
+            setProducts([
+                {
+                    id: '1',
+                    name: 'Test Product',
+                    description: 'Description',
+                    category: 'Sarees',
+                    basePrice: 100,
+                    stockQuantity: 10,
+                    active: true,
+                    images: [],
+                    availableSizes: [],
+                    availableColors: []
+                }
+            ]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const deleteProduct = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this product?')) return;
+        try {
+            await api.delete(`/products/${id}`);
+            fetchProducts();
+        } catch (error) {
+            console.error('Failed to delete product', error);
+        }
+    };
+
+    return (
+        <div className="bg-gray-50 min-h-screen p-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+                    <div className="flex gap-2">
+                        <Button onClick={() => router.push('/admin')}>
+                            Back to Dashboard
+                        </Button>
+                        <Button onClick={() => router.push('/admin/products/new')}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Product
+                        </Button>
+                        <Button onClick={fetchProducts} variant="outline">
+                            <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+                        </Button>
+                    </div>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>All Products</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? <Skeleton className="h-[200px] w-full" /> : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Category</TableHead>
+                                        <TableHead>Price</TableHead>
+                                        <TableHead>Stock</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {products.map((product) => (
+                                        <TableRow key={product.id}>
+                                            <TableCell className="font-medium">{product.name}</TableCell>
+                                            <TableCell>{product.category}</TableCell>
+                                            <TableCell>${product.basePrice}</TableCell>
+                                            <TableCell>{product.stockQuantity}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={product.active ? 'default' : 'secondary'}>
+                                                    {product.active ? 'Active' : 'Inactive'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end items-center gap-2">
+                                                    <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/products/edit/${product.id}`)}>
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => deleteProduct(product.id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {products.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                                                No products found. Add one to get started.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}

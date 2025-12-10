@@ -1,0 +1,29 @@
+# Java
+target/
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+# Maven
+.mvn/
+wrapper/
+mvnw
+mvnw.cmd
+
+# Node
+node_modules/
+dist/
+build/
+.env
+.env.local
+.DS_Store
+coverage/
+.next/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
