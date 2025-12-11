@@ -7,7 +7,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
 
 @Data
 @Document(collection = "products")
@@ -17,12 +19,15 @@ public class Product {
     @Schema(description = "Unique product identifier", example = "prod123")
     private String id;
 
+    @NotBlank(message = "Product name is required")
     @Schema(description = "Product name", example = "Custom Silk Saree")
     private String name;
 
+    @NotBlank(message = "Description is required")
     @Schema(description = "Detailed product description", example = "Premium quality silk saree with traditional design")
     private String description;
 
+    @NotBlank(message = "Category is required")
     @Schema(description = "Product category", example = "sarees", allowableValues = { "sarees", "blouses", "fabrics",
             "accessories" })
     private String category;
@@ -31,6 +36,8 @@ public class Product {
     @Schema(description = "List of product image URLs", example = "[\"https://example.com/img1.jpg\", \"https://example.com/img2.jpg\"]")
     private List<String> images;
 
+    @NotNull(message = "Base price is required")
+    @Min(value = 0, message = "Price must be non-negative")
     @Schema(description = "Base price of the product", example = "5000.00")
     private BigDecimal basePrice;
 
@@ -43,6 +50,8 @@ public class Product {
     private List<String> availableColors;
 
     // Simple stock management for now
+    @NotNull(message = "Stock quantity is required")
+    @Min(value = 0, message = "Stock quantity must be non-negative")
     @Schema(description = "Current stock quantity", example = "50")
     private Integer stockQuantity;
 

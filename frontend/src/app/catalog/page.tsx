@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Product } from '@/types';
 import { ProductService } from '@/services/product.service';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, RefreshCw } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -16,8 +16,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useLocale } from '@/context/LocaleContext';
 
 export default function CatalogPage() {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [allProducts, setAllProducts] = useState<Product[]>([]); // Store all fetched prodcuts
+    const [visibleProducts, setVisibleProducts] = useState<Product[]>([]); // Store filtered products
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -27,49 +29,29 @@ export default function CatalogPage() {
 
     const { currentLocale } = useLocale();
 
-    // Mock categories for now
+    // Mock categories for now - in a real app these should come from an API
     const categories = ['All', 'Blouses', 'Kurtis', 'Sarees', 'Accessories'];
 
-    useEffect(() => {
-        fetchProducts();
-    }, [activeCategory, sortBy, currentLocale]); // Re-fetch/Apply filters when these change
-
-    const fetchProducts = async () => {
+    const fetchProducts = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
-            // Try to fetch from backend
-            // In a real app, we would pass all filters (price, sort, category) to the backend API here.
-            // const data = await ProductService.getProducts({ category: activeCategory, sort: sortBy, ... });
-
-            // For this verified mock-mode:
+            // Always fetch from backend
             const data = await ProductService.getAllProducts(activeCategory && activeCategory !== 'All' ? activeCategory : undefined);
-
-            if (data && data.length > 0) {
-                // Even if backend returns data, we might need to apply client-side sorting if API doesn't support it yet
-                // But assuming backend does it right, we just set it.
-                // If we are strictly in "Mock Mode" because backend is down:
-                setProducts(data);
-            } else {
-                // Backend empty or down, use fully client-side mock logic
-                applyMockFilters();
-            }
+            setAllProducts(data || []);
         } catch (error) {
             console.error('Failed to fetch products', error);
-            applyMockFilters(); // Fallback on error
+            setError('Failed to load products. Please try again.');
+            setAllProducts([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeCategory]);
 
-    const applyMockFilters = () => {
-        let filtered = [...MOCK_PRODUCTS];
+    const applyClientSideFilters = useCallback(() => {
+        let filtered = [...allProducts];
 
-        // 1. Category Filter
-        if (activeCategory && activeCategory !== 'All') {
-            filtered = filtered.filter(p => p.category === activeCategory);
-        }
-
-        // 2. Search Filter
+        // 1. Search Filter (Client side for now, can be server side if needed)
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(p =>
@@ -78,7 +60,7 @@ export default function CatalogPage() {
             );
         }
 
-        // 3. Price Filter (Locale Aware)
+        // 2. Price Filter (Locale Aware)
         const min = parseFloat(priceRange.min) || 0;
         const max = parseFloat(priceRange.max) || Infinity;
 
@@ -87,59 +69,56 @@ export default function CatalogPage() {
             return priceInCurrency >= min && priceInCurrency <= max;
         });
 
-        // 4. Sorting
+        // 3. Sorting
         if (sortBy === 'price_asc') {
             filtered.sort((a, b) => (a.basePrice * currentLocale.rate) - (b.basePrice * currentLocale.rate));
         } else if (sortBy === 'price_desc') {
             filtered.sort((a, b) => (b.basePrice * currentLocale.rate) - (a.basePrice * currentLocale.rate));
         }
-        // 'relevance' - keep default order or search relevance if implemented
+        // 'relevance' - default order
 
-        setProducts(filtered);
-    };
+        setVisibleProducts(filtered);
+    }, [allProducts, searchQuery, priceRange, sortBy, currentLocale]);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
+
+    useEffect(() => {
+        applyClientSideFilters();
+    }, [applyClientSideFilters]);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        fetchProducts(); // Trigger filter chain
-    };
-
-    const handleApplyFilters = () => {
-        fetchProducts();
+        // Triggered via useEffect
     };
 
     const clearFilters = () => {
         setPriceRange({ min: '', max: '' });
         setSortBy('relevance');
-        setActiveCategory(null);
         setSearchQuery('');
-        // We need to trigger a fetch/update after clearing. 
-        // Since state updates are async, we might not capture reset values immediately if we call fetchProducts() directly.
-        // A simple way is to rely on useEffect or manually call applyMockFilters with default values.
-        // For simplicity in this mock setup:
-        setTimeout(() => {
-            // Reset UI and data
-            setProducts(MOCK_PRODUCTS);
-        }, 0);
+        // Category is separate, maybe keep it or reset it?
+        // setActiveCategory(null); 
     };
 
     return (
-        <div className="min-h-screen bg-gray-50/50">
+        <div className="min-h-screen bg-background/50">
             {/* Header Section */}
-            <div className="bg-white border-b border-gray-100 sticky top-16 z-30">
+            <div className="bg-card border-b border-border sticky top-16 z-30">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <h1 className="text-2xl font-bold text-gray-900">Collection</h1>
-                            {products.length > 0 && <Badge variant="secondary" className="hidden sm:inline-flex">{products.length} Items</Badge>}
+                            <h1 className="text-2xl font-bold text-foreground">Collection</h1>
+                            {visibleProducts.length > 0 && <Badge variant="secondary" className="hidden sm:inline-flex">{visibleProducts.length} Items</Badge>}
                         </div>
 
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <form onSubmit={handleSearch} className="relative flex-1 md:w-80">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="search"
                                     placeholder="Search designs..."
-                                    className="pl-9 bg-gray-50 search-input"
+                                    className="pl-9 bg-secondary/50 search-input"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -184,7 +163,7 @@ export default function CatalogPage() {
                                                     value={priceRange.min}
                                                     onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
                                                 />
-                                                <span className="text-gray-500">-</span>
+                                                <span className="text-muted-foreground">-</span>
                                                 <Input
                                                     type="number"
                                                     placeholder="Max"
@@ -196,9 +175,9 @@ export default function CatalogPage() {
                                     </div>
                                     <SheetFooter>
                                         <div className="flex flex-col gap-2 w-full sm:flex-row sm:justify-end">
-                                            <Button variant="outline" onClick={clearFilters}>Clear All</Button>
+                                            <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
                                             <SheetClose asChild>
-                                                <Button onClick={handleApplyFilters}>Apply Filters</Button>
+                                                <Button>Apply</Button>
                                             </SheetClose>
                                         </div>
                                     </SheetFooter>
@@ -226,7 +205,15 @@ export default function CatalogPage() {
 
             {/* Product Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {loading ? (
+                {error ? (
+                    <div className="text-center py-20">
+                        <h3 className="text-lg font-medium text-red-500">Error Loading Products</h3>
+                        <p className="mt-1 text-muted-foreground">{error}</p>
+                        <Button variant="outline" onClick={fetchProducts} className="mt-4">
+                            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+                        </Button>
+                    </div>
+                ) : loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[...Array(8)].map((_, i) => (
                             <div key={i} className="space-y-4">
@@ -238,16 +225,16 @@ export default function CatalogPage() {
                             </div>
                         ))}
                     </div>
-                ) : products.length > 0 ? (
+                ) : visibleProducts.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {products.map((product) => (
+                        {visibleProducts.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 ) : (
                     <div className="text-center py-20">
-                        <h3 className="text-lg font-medium text-gray-900">No products found</h3>
-                        <p className="mt-1 text-gray-500">Try adjusting your search or filters.</p>
+                        <h3 className="text-lg font-medium text-foreground">No products found</h3>
+                        <p className="mt-1 text-muted-foreground">Try adjusting your search or filters.</p>
                         <Button variant="link" onClick={clearFilters} className="mt-4">
                             Clear all filters
                         </Button>
@@ -257,55 +244,3 @@ export default function CatalogPage() {
         </div>
     );
 }
-
-// Mock Data for UI Dev
-const MOCK_PRODUCTS: Product[] = [
-    {
-        id: '1',
-        name: 'Floral Embroidered Blouse',
-        description: 'Hand-crafted floral embroidery on premium silk.',
-        category: 'Blouses',
-        images: ['https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?q=80&w=1000&auto=format&fit=crop'],
-        basePrice: 49.99,
-        availableSizes: ['S', 'M', 'L'],
-        availableColors: ['Red', 'Green'],
-        stockQuantity: 10,
-        active: true
-    },
-    {
-        id: '2',
-        name: 'Peacock Motif Silk Blouse',
-        description: 'Traditional peacock design with gold thread work.',
-        category: 'Blouses',
-        images: ['https://images.unsplash.com/photo-1583391733975-20360252b5b9?q=80&w=1000&auto=format&fit=crop'],
-        basePrice: 89.99,
-        availableSizes: ['M', 'L', 'XL'],
-        availableColors: ['Blue', 'Pink'],
-        stockQuantity: 5,
-        active: true
-    },
-    {
-        id: '3',
-        name: 'Geometric Pattern Kurti',
-        description: 'Modern geometric embroidery on cotton fabric.',
-        category: 'Kurtis',
-        images: ['https://images.unsplash.com/photo-1589810635657-232948472d98?q=80&w=1000&auto=format&fit=crop'],
-        basePrice: 35.50,
-        availableSizes: ['S', 'M', 'L', 'XL'],
-        availableColors: ['White', 'Black'],
-        stockQuantity: 20,
-        active: true
-    },
-    {
-        id: '4',
-        name: 'Custom Bridal Design',
-        description: 'Heavy embroidery work for bridal wear.',
-        category: 'Sarees',
-        images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1000&auto=format&fit=crop'],
-        basePrice: 199.99,
-        availableSizes: ['Custom'],
-        availableColors: ['Red', 'Gold'],
-        stockQuantity: 2,
-        active: true
-    }
-];

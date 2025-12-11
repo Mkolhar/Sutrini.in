@@ -5,34 +5,40 @@ import { Product } from '@/types';
 import { ProductService } from '@/services/product.service';
 import { useCartStore } from '@/store/cart';
 import { Button } from '@/components/ui/button';
-// import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { ShoppingCart, Heart, Share2 } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { useRouter } from 'next/navigation';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedSize, setSelectedSize] = useState<string>('');
     const [selectedColor, setSelectedColor] = useState<string>('');
     const [customNotes, setCustomNotes] = useState('');
     const [quantity, setQuantity] = useState(1);
+    const router = useRouter();
 
     const { addItem } = useCartStore();
 
     useEffect(() => {
         const fetchProduct = async () => {
+            setLoading(true);
+            setError(null);
             try {
                 const data = await ProductService.getProductById(params.id);
                 setProduct(data);
-            } catch {
-                // Fallback to mock data if API fails (common in early dev)
-                console.log('Fetching mock product since API failed');
-                setProduct(MOCK_PRODUCT_DETAIL);
+                // Pre-select first options if available
+                if (data.availableSizes?.length > 0) setSelectedSize(data.availableSizes[0]);
+                if (data.availableColors?.length > 0) setSelectedColor(data.availableColors[0]);
+            } catch (err) {
+                console.error('Failed to fetch product details', err);
+                setError('Product not found or unable to load details.');
             } finally {
                 setLoading(false);
             }
@@ -71,8 +77,19 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         );
     }
 
-    if (!product) {
-        return <div className="text-center py-12">Product not found.</div>;
+    if (error || !product) {
+        return (
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+                <div className="flex flex-col items-center gap-4">
+                    <AlertCircle className="h-12 w-12 text-red-500" />
+                    <h2 className="text-2xl font-bold text-gray-900">{error || 'Product Not Found'}</h2>
+                    <p className="text-gray-500">The product you are looking for does not exist or has been moved.</p>
+                    <Button onClick={() => router.push('/catalog')} variant="outline">
+                        Back to Catalog
+                    </Button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -90,7 +107,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                 />
                             </AspectRatio>
                         </div>
-                        {/* Thumbnails would go here */}
                     </div>
 
                     {/* Product Info */}
@@ -100,7 +116,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                             <p className="mt-2 text-lg text-gray-500 capitalize">{product.category}</p>
                             <div className="mt-4 flex items-center justify-between">
                                 <p className="text-3xl font-bold tracking-tight text-gray-900">${product.basePrice.toFixed(2)}</p>
-                                {/* Rating could go here */}
                             </div>
                         </div>
 
@@ -111,33 +126,37 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                         <div className="space-y-6 pt-6 border-t border-gray-100">
                             {/* Configuration */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label>Size</Label>
-                                    <Select value={selectedSize} onValueChange={setSelectedSize}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select size" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {product.availableSizes?.map(size => (
-                                                <SelectItem key={size} value={size}>{size}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                {product.availableSizes && product.availableSizes.length > 0 && (
+                                    <div className="space-y-2">
+                                        <Label>Size</Label>
+                                        <Select value={selectedSize} onValueChange={setSelectedSize}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select size" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {product.availableSizes.map(size => (
+                                                    <SelectItem key={size} value={size}>{size}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
 
-                                <div className="space-y-2">
-                                    <Label>Color</Label>
-                                    <Select value={selectedColor} onValueChange={setSelectedColor}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select color" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {product.availableColors?.map(color => (
-                                                <SelectItem key={color} value={color}>{color}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                {product.availableColors && product.availableColors.length > 0 && (
+                                    <div className="space-y-2">
+                                        <Label>Color</Label>
+                                        <Select value={selectedColor} onValueChange={setSelectedColor}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select color" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {product.availableColors.map(color => (
+                                                    <SelectItem key={color} value={color}>{color}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -164,8 +183,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                 <Button
                                     className="flex-1 bg-purple-600 hover:bg-purple-700 h-12 text-lg"
                                     onClick={handleAddToCart}
+                                    disabled={!product.active || product.stockQuantity === 0}
                                 >
-                                    <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
+                                    <ShoppingCart className="mr-2 h-5 w-5" />
+                                    {product.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
                                 </Button>
                                 <Button variant="outline" size="icon" className="h-12 w-12">
                                     <Heart className="h-5 w-5" />
@@ -184,16 +205,3 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         </div>
     );
 }
-
-const MOCK_PRODUCT_DETAIL: Product = {
-    id: '1',
-    name: 'Floral Embroidered Blouse',
-    description: 'Exquisite hand-crafted floral embroidery on premium raw silk fabric. This design features intricate thread work inspired by traditional motifs, perfect for weddings and festive occasions. The blouse is customizable to your exact measurements.',
-    category: 'Blouses',
-    images: ['https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?q=80&w=1000&auto=format&fit=crop'],
-    basePrice: 49.99,
-    availableSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'],
-    availableColors: ['Red', 'Green', 'Royal Blue', 'Black'],
-    stockQuantity: 10,
-    active: true
-};

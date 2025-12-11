@@ -30,21 +30,9 @@ export default function ProductsPage() {
             setProducts(response.data);
         } catch (error) {
             console.error('Failed to fetch products', error);
-            // Mock data incase backend is down
-            setProducts([
-                {
-                    id: '1',
-                    name: 'Test Product',
-                    description: 'Description',
-                    category: 'Sarees',
-                    basePrice: 100,
-                    stockQuantity: 10,
-                    active: true,
-                    images: [],
-                    availableSizes: [],
-                    availableColors: []
-                }
-            ]);
+            // Do NOT use mock data here to avoid confusion. Failing to fetch means backend is down.
+            alert("Failed to connect to backend. Please ensure the server is running on port 8081.");
+            setProducts([]);
         } finally {
             setLoading(false);
         }
