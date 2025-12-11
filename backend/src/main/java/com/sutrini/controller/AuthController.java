@@ -126,6 +126,11 @@ public class AuthController {
         }
 
         user.setRoles(roles);
+        // Generate a new Tenant ID for the user (everyone gets their own tenant for now
+        // in this MVP)
+        // In a real app, you might join an existing tenant via Invite Code.
+        user.setTenantId(java.util.UUID.randomUUID().toString());
+
         userRepository.save(user);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));

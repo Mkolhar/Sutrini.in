@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import java.math.BigDecimal;
 
-@Data
 @Schema(description = "Order item representing a single product in an order")
 public class OrderItem {
     @Schema(description = "Product ID", example = "prod123")
@@ -27,4 +26,60 @@ public class OrderItem {
 
     @Schema(description = "Custom notes or instructions for this item", example = "Please add extra embroidery")
     private String customNotes;
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public String getSize() {
+        return size;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public String getCustomNotes() {
+        return customNotes;
+    }
+
+    public void setCustomNotes(String customNotes) {
+        this.customNotes = customNotes;
+    }
 }

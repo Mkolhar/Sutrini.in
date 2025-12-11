@@ -111,6 +111,7 @@ public class OrderController {
 
         order.setCustomerId(user.getId());
         order.setCustomerEmail(user.getEmail());
+        order.setTenantId(user.getTenantId()); // Set Tenant ID
         order.setStatus(OrderStatus.PENDING); // Or PAID if payment flow is upstream
 
         Order savedOrder = orderRepository.save(order);

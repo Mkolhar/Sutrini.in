@@ -48,4 +48,96 @@ public class Product {
 
     @Schema(description = "Whether the product is active and available for purchase", example = "true", defaultValue = "true")
     private boolean active = true;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public List<String> getImages() {
+        return images;
+    }
+
+    public void setImages(List<String> images) {
+        this.images = images;
+    }
+
+    public BigDecimal getBasePrice() {
+        return basePrice;
+    }
+
+    public void setBasePrice(BigDecimal basePrice) {
+        this.basePrice = basePrice;
+    }
+
+    public List<String> getAvailableSizes() {
+        return availableSizes;
+    }
+
+    public void setAvailableSizes(List<String> availableSizes) {
+        this.availableSizes = availableSizes;
+    }
+
+    public List<String> getAvailableColors() {
+        return availableColors;
+    }
+
+    public void setAvailableColors(List<String> availableColors) {
+        this.availableColors = availableColors;
+    }
+
+    public Integer getStockQuantity() {
+        return stockQuantity;
+    }
+
+    public void setStockQuantity(Integer stockQuantity) {
+        this.stockQuantity = stockQuantity;
+    }
+
+    // Multi-tenancy
+    @Schema(description = "Tenant ID", example = "tenant_123")
+    private String tenantId;
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 }

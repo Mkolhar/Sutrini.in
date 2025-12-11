@@ -8,19 +8,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { OrderService } from '@/services/order.service';
 import { Loader2 } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
+import { stripePromise } from '@/lib/stripe';
+import PaymentSection from './PaymentSection';
+import api from '@/lib/api';
 
 export default function CheckoutPage() {
     const { items, clearCart } = useCartStore();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
+    const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const [orderId, setOrderId] = useState<string | null>(null);
+    const [amount, setAmount] = useState<number>(0);
 
     const subtotal = items.reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0);
 
-    const handleCheckout = async (e: React.FormEvent) => {
+    const handleCreateOrder = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
+            // 1. Create Order
             const orderData = {
                 items: items.map(item => ({
                     productId: item.productId,
@@ -35,18 +44,32 @@ export default function CheckoutPage() {
             };
 
             const order = await OrderService.createOrder(orderData);
+            setOrderId(order.id);
+            setAmount(order.totalAmount * 100); // converting to paise
 
-            clearCart();
-            router.push(`/track?orderId=${order.id}`); // Redirect to tracking or success page
+            // 2. Create Payment Intent
+            const res = await api.post('/payments/create-payment-intent', {
+                orderId: order.id,
+                amount: Math.round(order.totalAmount * 100) // Ensure integer
+            });
+
+            setClientSecret(res.data.clientSecret);
+            setStep('payment');
+
         } catch (error) {
-            console.error('Checkout failed', error);
-            alert('Checkout failed. Please try again.');
+            console.error('Order creation failed', error);
+            alert('Failed to initiate checkout. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
-    if (items.length === 0) {
+    const handlePaymentSuccess = () => {
+        clearCart();
+        router.push(`/track?orderId=${orderId}`);
+    };
+
+    if (items.length === 0 && step === 'shipping') {
         return <div className="p-8 text-center">Your cart is empty.</div>;
     }
 
@@ -62,57 +85,60 @@ export default function CheckoutPage() {
                             {items.map(item => (
                                 <div key={item.id} className="flex justify-between text-sm">
                                     <span>{item.quantity}x {item.product.name} ({item.size})</span>
-                                    <span>${(item.product.basePrice * item.quantity).toFixed(2)}</span>
+                                    <span>₹{(item.product.basePrice * item.quantity).toFixed(2)}</span>
                                 </div>
                             ))}
                             <div className="pt-4 border-t border-gray-200 flex justify-between font-bold text-base">
                                 <span>Total</span>
-                                <span>${subtotal.toFixed(2)}</span>
+                                <span>₹{subtotal.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="p-6">
-                        <form onSubmit={handleCheckout} className="space-y-6">
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label htmlFor="firstName">First Name</Label>
-                                    <Input id="firstName" required placeholder="John" />
+                        {step === 'shipping' ? (
+                            <form onSubmit={handleCreateOrder} className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="firstName">First Name</Label>
+                                        <Input id="firstName" required placeholder="John" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="lastName">Last Name</Label>
+                                        <Input id="lastName" required placeholder="Doe" />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="lastName">Last Name</Label>
-                                    <Input id="lastName" required placeholder="Doe" />
-                                </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Address</Label>
-                                <Input id="address" required placeholder="123 Main St" />
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                                <div className="space-y-2 col-span-2">
-                                    <Label htmlFor="city">City</Label>
-                                    <Input id="city" required />
-                                </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="zip">ZIP Code</Label>
-                                    <Input id="zip" required />
+                                    <Label htmlFor="address">Address</Label>
+                                    <Input id="address" required placeholder="123 Main St" />
                                 </div>
-                            </div>
 
-                            <div className="pt-6 border-t border-gray-100">
+                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                                    <div className="space-y-2 col-span-2">
+                                        <Label htmlFor="city">City</Label>
+                                        <Input id="city" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="zip">ZIP Code</Label>
+                                        <Input id="zip" required />
+                                    </div>
+                                </div>
+
+                                <Button type="submit" className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-lg" disabled={loading}>
+                                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparing Payment...</> : `Proceed to Payment`}
+                                </Button>
+                            </form>
+                        ) : (
+                            <div>
                                 <h3 className="text-lg font-semibold mb-4">Payment</h3>
-                                {/* Placeholder for Stripe Element */}
-                                <div className="p-4 border border-gray-200 rounded-md bg-gray-50 text-center text-gray-500 text-sm">
-                                    Stripe Payment Form Placeholder
-                                </div>
+                                {clientSecret && (
+                                    <Elements stripe={stripePromise} options={{ clientSecret }}>
+                                        <PaymentSection amount={amount} onSuccess={handlePaymentSuccess} />
+                                    </Elements>
+                                )}
                             </div>
-
-                            <Button type="submit" className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-lg" disabled={loading}>
-                                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</> : `Pay $${subtotal.toFixed(2)}`}
-                            </Button>
-                        </form>
+                        )}
                     </div>
                 </div>
             </div>
