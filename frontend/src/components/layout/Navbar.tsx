@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, User, Menu, X, LogOut, UserCircle } from 'lucide-react';
+import { ShoppingBag, User, Menu, X, LogOut, UserCircle, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -117,9 +117,22 @@ export function Navbar() {
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
+                                        <Link href="/orders" className="cursor-pointer">
+                                            <ShoppingBag className="mr-2 h-4 w-4" />
+                                            <span>My Orders</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
                                         <Link href="/profile" className="cursor-pointer">
                                             <UserCircle className="mr-2 h-4 w-4" />
                                             <span>Profile</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/admin/design" className="cursor-pointer">
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            <span>Admin: Designs</span>
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />

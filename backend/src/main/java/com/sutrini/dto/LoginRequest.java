@@ -1,7 +1,7 @@
 package com.sutrini.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
+
 import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "Login request containing user credentials")

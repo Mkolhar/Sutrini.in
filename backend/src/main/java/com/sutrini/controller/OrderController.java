@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/orders")
 @Tag(name = "Orders", description = "Order management APIs - Consumer endpoints (place/track orders) and Admin endpoints (manage all orders)")

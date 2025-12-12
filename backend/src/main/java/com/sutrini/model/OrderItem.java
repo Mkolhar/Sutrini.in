@@ -1,7 +1,7 @@
 package com.sutrini.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
+
 import java.math.BigDecimal;
 
 @Schema(description = "Order item representing a single product in an order")
@@ -26,6 +26,9 @@ public class OrderItem {
 
     @Schema(description = "Custom notes or instructions for this item", example = "Please add extra embroidery")
     private String customNotes;
+
+    @Schema(description = "URL or Base64 string of the custom design image", example = "data:image/png;base64,...")
+    private String designImageUrl;
 
     public String getProductId() {
         return productId;
@@ -81,5 +84,13 @@ public class OrderItem {
 
     public void setCustomNotes(String customNotes) {
         this.customNotes = customNotes;
+    }
+
+    public String getDesignImageUrl() {
+        return designImageUrl;
+    }
+
+    public void setDesignImageUrl(String designImageUrl) {
+        this.designImageUrl = designImageUrl;
     }
 }

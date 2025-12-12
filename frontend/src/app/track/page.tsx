@@ -1,126 +1,193 @@
-'use client';
+"use client";
 
-export const dynamic = 'force-dynamic';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Search, Package, CheckCircle2, Circle, Truck, MapPin, Clock } from "lucide-react";
+import { orderService, Order, OrderStatus } from "@/services/order.service";
 
-import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, Suspense } from 'react';
-import { OrderService } from '@/services/order.service';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import Image from 'next/image';
-import { CheckCircle2, Package, Truck, Home } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-
-function TrackOrderContent() {
-    const searchParams = useSearchParams();
-    const orderId = searchParams.get('orderId');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [order, setOrder] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (orderId) {
-            OrderService.getOrder(orderId)
-                .then(data => setOrder(data))
-                .catch(err => console.error(err))
-                .finally(() => setLoading(false));
-        } else {
-            setLoading(false);
-        }
-    }, [orderId]);
-
-    if (!orderId) {
-        return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center">
-                <h1 className="text-2xl font-bold mb-4">Track Your Order</h1>
-                <p className="text-gray-500 mb-6">Enter your Order ID to see real-time updates.</p>
-                {/* Add form here if needed */}
-            </div>
-        );
-    }
-
-    if (loading) return <div className="p-12"><Skeleton className="h-48 w-full max-w-2xl mx-auto" /></div>;
-
-    if (!order) return <div className="p-12 text-center">Order not found.</div>;
-
-    const steps = [
-        { status: 'PENDING', label: 'Order Placed', icon: CheckCircle2 },
-        { status: 'IN_PRODUCTION', label: 'In Production', icon: Package },
-        { status: 'SHIPPED', label: 'Shipped', icon: Truck },
-        { status: 'DELIVERED', label: 'Delivered', icon: Home },
-    ];
-
-    // This logic is simple; real logic would check history or index
-    const currentStepIndex = steps.findIndex(s => s.status === order.status) !== -1
-        ? steps.findIndex(s => s.status === order.status)
-        : 0;
-
-    return (
-        <div className="bg-gray-50 min-h-screen py-12">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-                    <div className="mb-8">
-                        <h1 className="text-2xl font-bold text-gray-900">Order #{order.id.slice(-6).toUpperCase()}</h1>
-                        <p className="text-gray-500">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
-                    </div>
-
-                    {order.qrCodeUrl && (
-                        <div className="mb-8 flex justify-center relative w-32 h-32 mx-auto">
-                            <Image src={order.qrCodeUrl} alt="Order QR" fill className="object-contain" />
-                        </div>
-                    )}
-
-                    <div className="relative flex justify-between items-center mb-12">
-                        <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-200 -z-0"></div>
-                        <div
-                            className="absolute left-0 top-1/2 h-1 bg-green-500 -z-0 transition-all duration-500"
-                            style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
-                        ></div>
-
-                        {steps.map((step, idx) => {
-                            const Icon = step.icon;
-                            const isCompleted = idx <= currentStepIndex;
-                            return (
-                                <div key={step.status} className="relative z-10 flex flex-col items-center bg-white px-2">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'bg-white border-gray-300 text-gray-400'}`}>
-                                        <Icon className="h-5 w-5" />
-                                    </div>
-                                    <span className={`mt-2 text-xs font-medium ${isCompleted ? 'text-green-600' : 'text-gray-500'}`}>{step.label}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className="text-left border-t border-gray-100 pt-8">
-                        <h2 className="font-semibold mb-4">Items</h2>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {order.items.map((item: any) => (
-                            <div key={item.productId} className="flex justify-between py-2 text-sm">
-                                <span>{item.quantity}x {item.productName} ({item.size})</span>
-                                <span>${item.unitPrice}</span>
-                            </div>
-                        ))}
-                        <div className="flex justify-between font-bold mt-4 text-lg">
-                            <span>Total</span>
-                            <span>${order.totalAmount}</span>
-                        </div>
-                    </div>
-
-                    <div className="mt-8">
-                        <Button asChild variant="outline">
-                            <Link href="/catalog">Continue Shopping</Link>
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
+// Order of steps for timeline
+const STATUS_STEPS = [
+    { status: OrderStatus.PENDING, label: "Order Placed", icon: Package },
+    { status: OrderStatus.CONFIRMED, label: "Confirmed", icon: CheckCircle2 },
+    { status: OrderStatus.IN_PRODUCTION, label: "In Production", icon: Clock },
+    { status: OrderStatus.QUALITY_CHECK, label: "Quality Check", icon: CheckCircle2 },
+    { status: OrderStatus.SHIPPED, label: "Shipped", icon: Truck },
+    { status: OrderStatus.DELIVERED, label: "Delivered", icon: MapPin },
+];
 
 export default function TrackOrderPage() {
+    const searchParams = useSearchParams();
+    const initialId = searchParams.get("id") || "";
+
+    const [orderId, setOrderId] = useState(initialId);
+    const [order, setOrder] = useState<Order | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const fetchOrder = async (id: string) => {
+        if (!id) return;
+        setLoading(true);
+        setError("");
+        setOrder(null);
+        try {
+            const data = await orderService.getOrderById(id);
+            setOrder(data);
+        } catch (err: any) {
+            console.error(err);
+            setError("Order not found or access denied.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (initialId) {
+            fetchOrder(initialId);
+        }
+    }, [initialId]);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        fetchOrder(orderId);
+    };
+
+    const getStepStatus = (stepStatus: OrderStatus, currentStatus: OrderStatus) => {
+        const stepIndex = STATUS_STEPS.findIndex(s => s.status === stepStatus);
+        const currentIndex = STATUS_STEPS.findIndex(s => s.status === currentStatus);
+
+        if (stepStatus === currentStatus) return "current";
+        if (stepIndex < currentIndex) return "completed";
+        return "upcoming";
+    };
+
     return (
-        <Suspense fallback={<div className="p-12 text-center">Loading tracker...</div>}>
-            <TrackOrderContent />
-        </Suspense>
+        <div className="container mx-auto py-10 px-4 min-h-[70vh]">
+            <div className="max-w-3xl mx-auto space-y-8">
+
+                {/* Header & Search */}
+                <div className="text-center space-y-4">
+                    <h1 className="text-3xl font-bold">Track Your Order</h1>
+                    <p className="text-muted-foreground">Enter your Order ID to see real-time updates.</p>
+
+                    <form onSubmit={handleSearch} className="flex gap-2 max-w-md mx-auto mt-4">
+                        <Input
+                            placeholder="Order ID (e.g. order123)"
+                            value={orderId}
+                            onChange={(e) => setOrderId(e.target.value)}
+                            className="bg-background"
+                        />
+                        <Button type="submit" disabled={loading}>
+                            <Search className="h-4 w-4 mr-2" />
+                            Track
+                        </Button>
+                    </form>
+                </div>
+
+                {/* Error State */}
+                {error && (
+                    <Card className="border-destructive/50 bg-destructive/10">
+                        <CardContent className="pt-6 text-center text-destructive">
+                            {error}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Loading State */}
+                {loading && (
+                    <div className="flex justify-center p-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                )}
+
+                {/* Order Details & Timeline */}
+                {order && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <div className="space-y-1">
+                                    <CardTitle>Order #{order.id}</CardTitle>
+                                    <CardDescription>Placed on {new Date(order.createdAt).toLocaleDateString()}</CardDescription>
+                                </div>
+                                <Badge variant={order.status === OrderStatus.DELIVERED ? 'default' : 'secondary'} className="text-sm">
+                                    {order.status.replace("_", " ")}
+                                </Badge>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-col md:flex-row justify-between gap-6 pt-4">
+                                    <div>
+                                        <h4 className="font-semibold mb-1">Items</h4>
+                                        <ul className="text-sm text-muted-foreground space-y-1">
+                                            {order.items.map((item, idx) => (
+                                                <li key={idx}>
+                                                    {item.quantity}x {item.productName || `Product ${item.productId}`}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <div>
+                                            <h4 className="font-semibold mb-1">Total Amount</h4>
+                                            <p className="text-lg font-bold">₹{order.totalAmount.toLocaleString()}</p>
+                                        </div>
+                                        {order.items[0]?.designImageUrl && (
+                                            <div>
+                                                <h4 className="font-semibold mb-1">Your Design</h4>
+                                                <img
+                                                    src={order.items[0].designImageUrl}
+                                                    alt="Design"
+                                                    className="w-24 h-24 object-contain border rounded-md bg-gray-50 dark:bg-gray-800"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Tracking Timeline</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="relative border-l-2 border-muted ml-4 md:ml-6 space-y-8 py-2">
+                                    {STATUS_STEPS.map((step, index) => {
+                                        const statusState = getStepStatus(step.status, order.status);
+                                        const Icon = step.icon;
+
+                                        return (
+                                            <div key={step.status} className="relative pl-8 md:pl-10">
+                                                {/* Dot/Icon on timeline */}
+                                                <div className={`absolute -left-[9px] top-0 p-1 rounded-full border-2 bg-background 
+                                        ${statusState === 'completed' || statusState === 'current'
+                                                        ? 'border-primary text-primary'
+                                                        : 'border-muted text-muted-foreground'}`
+                                                }>
+                                                    <Icon className="h-3 w-3" />
+                                                </div>
+
+                                                <div className={`flex flex-col ${statusState === 'upcoming' ? 'opacity-50' : ''}`}>
+                                                    <h4 className={`text-sm font-semibold ${statusState === 'current' ? 'text-primary' : ''}`}>
+                                                        {step.label}
+                                                    </h4>
+                                                    {statusState === 'current' && (
+                                                        <p className="text-xs text-muted-foreground mt-1 animate-pulse">
+                                                            Current Stage
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </div>
+        </div >
     );
 }

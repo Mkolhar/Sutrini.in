@@ -4,17 +4,19 @@ import com.sutrini.exception.ResourceNotFoundException;
 import com.sutrini.model.Product;
 import com.sutrini.repository.ProductRepository;
 import com.sutrini.service.ProductService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+
+    public ProductServiceImpl(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
 
     @Override
     public List<Product> getAllProducts(String category) {

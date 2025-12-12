@@ -63,6 +63,9 @@ export default function AdminDashboard() {
                         <Button variant="outline" onClick={() => window.location.href = '/admin/products'}>
                             Manage Products
                         </Button>
+                        <Button variant="outline" onClick={() => window.location.href = '/admin/design'}>
+                            Manage Design Studio
+                        </Button>
                         <Button onClick={fetchOrders} variant="outline">
                             <RefreshCw className="mr-2 h-4 w-4" /> Refresh
                         </Button>

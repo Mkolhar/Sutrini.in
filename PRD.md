@@ -268,3 +268,9 @@ This document serves as the source of truth for the Sutrini.in project.
   ]
 }
 ```
+## Implemented Features (Update)
+- **Design Studio**: Custom inquiry flow with mock-up preview and image upload.
+- **Order Tracking**: Customer-facing tracking timeline (QR hidden).
+- **My Orders**: Customer portal to view past order history (`/orders`).
+- **QR Codes**: Internal/Admin usage only. Displayed in Admin Dashboard for factory operations.
+- **Admin Dashboard**: Order status updates and QR code generation/printing.

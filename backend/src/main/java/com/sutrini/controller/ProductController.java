@@ -14,21 +14,23 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/products")
 @Tag(name = "Products", description = "Product catalog APIs - Consumer endpoints (browse/search) and Admin endpoints (manage products)")
-@RequiredArgsConstructor
 public class ProductController {
 
         private final ProductService productService;
+
+        public ProductController(ProductService productService) {
+                this.productService = productService;
+        }
 
         @Operation(summary = "Get All Products (Consumer)", description = "Retrieve all active products from the catalog. Optionally filter by category. This is a public endpoint used by consumers to browse the product catalog.")
         @ApiResponses(value = {

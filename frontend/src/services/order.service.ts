@@ -1,63 +1,71 @@
 import api from '@/lib/api';
+import { Address } from '@/types';
 
 export interface OrderItem {
     productId: string;
-    productName: string;
     quantity: number;
     unitPrice: number;
-    size: string;
-    color: string;
-    customNotes?: string;
+    // Add product name/image if needed for display, though normally fetched via productId
+    productName?: string;
+    productImage?: string;
+    designImageUrl?: string; // Base64 or URL of custom design
+}
+
+export enum OrderStatus {
+    PENDING = 'PENDING',
+    CONFIRMED = 'CONFIRMED',
+    IN_PRODUCTION = 'IN_PRODUCTION',
+    QUALITY_CHECK = 'QUALITY_CHECK',
+    SHIPPED = 'SHIPPED',
+    DELIVERED = 'DELIVERED',
+    CANCELLED = 'CANCELLED'
 }
 
 export interface Order {
+    id: string;
+    customerId: string;
+    customerEmail?: string;
     items: OrderItem[];
     totalAmount: number;
-    // Payment details would go here
+    status: OrderStatus;
+    qrCodeUrl?: string;
+    createdAt: string;
+    shippingAddress?: Address; // Ensure backend supports this if we add it
 }
 
-export const OrderService = {
-    createOrder: async (orderData: Order) => {
-        try {
-            const response = await api.post('/orders', orderData);
-            return response.data;
-        } catch (e) {
-            console.warn('Backend unavailable, returning mock order', e);
-            return {
-                id: 'ord_' + Math.random().toString(36).substr(2, 9),
-                ...orderData,
-                status: 'PENDING',
-                createdAt: new Date().toISOString(),
-                qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MockOrder'
-            };
-        }
+export const orderService = {
+    // Determine if we need public tracking or just authenticated
+    // Currently backend requires auth for /api/orders
+    getMyOrders: async () => {
+        const response = await api.get<Order[]>('/orders');
+        return response.data;
     },
 
-    getUserOrders: async () => {
-        try {
-            const response = await api.get('/orders');
-            return response.data;
-        } catch {
-            return [];
-        }
+    getOrderById: async (id: string) => {
+        const response = await api.get<Order>(`/orders/${id}`);
+        return response.data;
     },
 
-    getOrder: async (id: string) => {
-        try {
-            const response = await api.get(`/orders/${id}`);
-            return response.data;
-        } catch {
-            // Mock Return
-            return {
-                id: id,
-                status: 'PENDING',
-                createdAt: new Date().toISOString(),
-                qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + id,
-                items: [
-                    { productName: 'Mock Product', quantity: 1, unitPrice: 49.99, size: 'M' }
-                ],
-                totalAmount: 49.99
-            };
-        }
+    createOrder: async (orderData: Partial<Order>) => {
+        const response = await api.post<Order>('/orders', orderData);
+        return response.data;
+    },
+
+    updateStatus: async (id: string, status: OrderStatus) => {
+        // Backend expects @RequestBody OrderStatus status (Enum)
+        // Sending just the string value in quotes is the standard way for Spring Boot to deserialize an Enum from @RequestBody
+        const response = await api.put<Order>(`/orders/${id}/status`, JSON.stringify(status), {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        return response.data;
+    },
+
+
+    // For Admin/Scan
+    getAllOrders: async () => {
+        const response = await api.get<Order[]>('/orders/all');
+        return response.data;
     }
 };

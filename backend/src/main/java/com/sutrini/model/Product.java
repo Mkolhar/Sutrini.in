@@ -1,17 +1,14 @@
 package com.sutrini.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.math.BigDecimal;
 import java.util.List;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 
-@Data
 @Document(collection = "products")
 @Schema(description = "Product entity representing items available in the catalog")
 public class Product {

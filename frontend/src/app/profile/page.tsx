@@ -2,14 +2,30 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { UserCircle, Mail, Shield, Palette, Globe } from 'lucide-react';
+import { UserCircle, Mail, Shield, Palette, Globe, MapPin, Plus } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
+import { Address } from '@/types';
+import { AddressService } from '@/services/address.service';
+import { AddressCard } from '@/components/address/AddressCard';
+import { AddressForm } from '@/components/address/AddressForm';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 export default function ProfilePage() {
     const { user, loading } = useAuth();
@@ -17,11 +33,75 @@ export default function ProfilePage() {
     const { theme } = useTheme();
     const { currentLocale, setLocale, availableLocales } = useLocale();
 
+    const [addresses, setAddresses] = useState<Address[]>([]);
+    const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
+    const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
+
     useEffect(() => {
         if (!loading && !user) {
             router.push('/login');
         }
     }, [user, loading, router]);
+
+    useEffect(() => {
+        if (user) {
+            fetchAddresses();
+        }
+    }, [user]);
+
+    const fetchAddresses = async () => {
+        try {
+            const data = await AddressService.getAddresses();
+            setAddresses(data);
+        } catch (error) {
+            console.error("Failed to fetch addresses", error);
+        }
+    };
+
+    const handleSaveAddress = async (data: Partial<Address>) => {
+        try {
+            if (editingAddress && editingAddress.id) {
+                await AddressService.updateAddress(editingAddress.id, data);
+            } else {
+                await AddressService.addAddress(data);
+            }
+            setIsAddressDialogOpen(false);
+            setEditingAddress(null);
+            fetchAddresses();
+        } catch (error) {
+            console.error("Failed to save address", error);
+        }
+    };
+
+    const confirmDeleteAddress = (id: string) => {
+        setAddressToDelete(id);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleDeleteAddress = async () => {
+        if (addressToDelete) {
+            try {
+                await AddressService.deleteAddress(addressToDelete);
+                fetchAddresses();
+                setAddressToDelete(null);
+                setIsDeleteDialogOpen(false);
+            } catch (error) {
+                console.error("Failed to delete address", error);
+            }
+        }
+    };
+
+    const openAddDialog = () => {
+        setEditingAddress(null);
+        setIsAddressDialogOpen(true);
+    };
+
+    const openEditDialog = (address: Address) => {
+        setEditingAddress(address);
+        setIsAddressDialogOpen(true);
+    };
 
     if (loading) {
         return (
@@ -135,6 +215,42 @@ export default function ProfilePage() {
                         </CardContent>
                     </Card>
 
+                    {/* Address Management Card */}
+                    <Card className="border-border bg-card transition-colors duration-300">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2 text-card-foreground">
+                                    <MapPin className="h-5 w-5" />
+                                    My Addresses
+                                </CardTitle>
+                                <CardDescription>
+                                    Manage your billing and shipping addresses
+                                </CardDescription>
+                            </div>
+                            <Button onClick={openAddDialog} size="sm" className="gap-1">
+                                <Plus className="h-4 w-4" /> Add Address
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            {addresses.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    No addresses saved yet.
+                                </div>
+                            ) : (
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {addresses.map((address) => (
+                                        <AddressCard
+                                            key={address.id}
+                                            address={address}
+                                            onEdit={openEditDialog}
+                                            onDelete={confirmDeleteAddress}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     {/* Preferences Card */}
                     <Card className="border-border bg-card transition-colors duration-300">
                         <CardHeader>
@@ -202,6 +318,41 @@ export default function ProfilePage() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Address Edit Dialog */}
+                <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>{editingAddress ? 'Edit Address' : 'Add New Address'}</DialogTitle>
+                            <DialogDescription>
+                                Enter your address details below.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <AddressForm
+                            initialData={editingAddress}
+                            onSubmit={handleSaveAddress}
+                            onCancel={() => setIsAddressDialogOpen(false)}
+                        />
+                    </DialogContent>
+                </Dialog>
+
+                {/* Delete Confirmation Alert Dialog */}
+                <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This address will be permanently removed from your account.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setAddressToDelete(null)}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteAddress} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Delete Address
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );

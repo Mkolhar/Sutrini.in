@@ -19,76 +19,76 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    
+
     /* Purple/Violet Primary - Modern E-commerce */
     --primary: 262 83% 58%;
     --primary-foreground: 0 0% 100%;
-    
+
     /* Soft Gray Secondary */
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-    
+
     /* Muted Tones */
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    
+
     /* Accent Colors - Vibrant Pink */
     --accent: 330 81% 60%;
     --accent-foreground: 0 0% 100%;
-    
+
     /* Destructive */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    
+
     /* Borders & Inputs */
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 262 83% 58%;
-    
+
     /* Chart Colors - Vibrant */
     --chart-1: 262 83% 58%;
     --chart-2: 330 81% 60%;
     --chart-3: 200 98% 39%;
     --chart-4: 280 89% 60%;
     --chart-5: 45 93% 58%;
-    
+
     --radius: 0.75rem;
   }
-  
+
   .dark {
     /* Modern Dark Theme - Rich & Premium */
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 6%;
+    --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 6%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    
+
     /* Vibrant Purple Primary */
     --primary: 263 70% 65%;
     --primary-foreground: 240 10% 3.9%;
-    
+
     /* Dark Gray Secondary */
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-    
+
     /* Muted Dark Tones */
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    
+
     /* Accent - Bright Pink/Magenta */
     --accent: 330 85% 65%;
     --accent-foreground: 240 10% 3.9%;
-    
+
     /* Destructive Dark */
-    --destructive: 0 72.2% 50.6%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    
+
     /* Borders & Inputs - Subtle */
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 263 70% 65%;
-    
+
     /* Chart Colors - Dark Mode Vibrant */
     --chart-1: 263 70% 65%;
     --chart-2: 330 85% 65%;
@@ -104,6 +104,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

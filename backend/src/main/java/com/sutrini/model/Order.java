@@ -1,7 +1,7 @@
 package com.sutrini.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;

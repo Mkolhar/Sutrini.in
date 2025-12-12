@@ -8,7 +8,7 @@ import com.sutrini.model.OrderStatus;
 import com.sutrini.repository.OrderRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.Data;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/payments")
 @Tag(name = "Payments", description = "Payment processing APIs using Stripe (UPI/Card)")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class PaymentController {
 
     @Value("${stripe.api.key}")

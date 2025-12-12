@@ -1965,3 +1965,58 @@ Scope & Requirements:
   - Ensure methods are transactional where appropriate (although MongoDB ops and external calls will be handled carefully to avoid partial failures).
 
 please add detailed readme and comments in the code bases, Please ask few you need any deatils
+
+### **3.1.6 Address Management**
+
+**Feature**: Comprehensive delivery address management for customers
+
+**Functional Requirements**:
+- **Address Management**
+  - Add multiple delivery addresses
+  - Edit existing addresses
+  - Soft delete addresses (mark as inactive)
+  - Set default billing and shipping addresses
+  - Validate address format based on locale
+
+- **Data Structure mapping**
+  - Unique ID for each address
+  - Linked to User ID
+  - Status flag (Active/Inactive) for soft delete history
+
+**Technical Implementation**:
+```typescript
+// Address Service
+interface AddressService {
+  getAddresses(userId: string): Promise<Address[]>
+  addAddress(userId: string, address: AddressData): Promise<Address>
+  updateAddress(addressId: string, address: AddressData): Promise<Address>
+  deleteAddress(addressId: string): Promise<void>
+  setDefaultAddress(addressId: string, type: 'billing' | 'shipping'): Promise<Address>
+}
+
+// Address Data Structure
+interface Address {
+  id: string
+  userId: string
+  fullName: string
+  streetAddress: string
+  aptSuite?: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
+  phoneNumber: string
+  isDefault: boolean
+  status: 'ACTIVE' | 'DELETED'
+}
+```
+
+**UI/UX Requirements**:
+- Profile section for "My Addresses"
+- "Add New Address" modal/form
+- Edit and Delete (with confirmation) actions on address cards
+- Visual indicator for Default address
+- **Location Capture**:
+  - Ability to detect current GPS location (Latitude/Longitude).
+  - (Future) Map interface to pinpoint location.
+

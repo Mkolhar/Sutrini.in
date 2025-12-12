@@ -16,3 +16,20 @@ export interface User {
     email: string;
     roles: string[];
 }
+
+export interface Address {
+    id?: string;
+    userId?: string;
+    fullName: string;
+    streetAddress: string;
+    aptSuite?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phoneNumber: string;
+    isDefault: boolean;
+    active?: boolean;
+    latitude?: number;
+    longitude?: number;
+}

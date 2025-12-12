@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'; // Added useState import
 import api from '@/lib/api';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -14,13 +14,25 @@ import {
     TableRow
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
     const router = useRouter();
 
     const fetchProducts = async () => {
@@ -31,7 +43,7 @@ export default function ProductsPage() {
         } catch (error) {
             console.error('Failed to fetch products', error);
             // Do NOT use mock data here to avoid confusion. Failing to fetch means backend is down.
-            alert("Failed to connect to backend. Please ensure the server is running on port 8081.");
+            // alert("Failed to connect to backend. Please ensure the server is running on port 8081.");
             setProducts([]);
         } finally {
             setLoading(false);
@@ -42,13 +54,18 @@ export default function ProductsPage() {
         fetchProducts();
     }, []);
 
-    const deleteProduct = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this product?')) return;
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        setDeleting(true);
         try {
-            await api.delete(`/products/${id}`);
+            await api.delete(`/products/${deleteId}`);
             fetchProducts();
         } catch (error) {
             console.error('Failed to delete product', error);
+            alert("Failed to delete product. Only Admins can delete products.");
+        } finally {
+            setDeleting(false);
+            setDeleteId(null);
         }
     };
 
@@ -104,7 +121,7 @@ export default function ProductsPage() {
                                                     <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/products/edit/${product.id}`)}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => deleteProduct(product.id)}>
+                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => setDeleteId(product.id)}>
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -123,6 +140,31 @@ export default function ProductsPage() {
                         )}
                     </CardContent>
                 </Card>
+
+                <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the product.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    confirmDelete();
+                                }}
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={deleting}
+                            >
+                                {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );
