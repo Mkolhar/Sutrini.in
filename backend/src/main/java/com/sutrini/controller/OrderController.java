@@ -105,7 +105,12 @@ public class OrderController {
     })
     @PostMapping
     public ResponseEntity<?> createOrder(@RequestBody Order order) {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        org.springframework.security.core.Authentication authentication = SecurityContextHolder.getContext()
+                .getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
+            return ResponseEntity.status(401).body("Error: User is not authenticated.");
+        }
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
 
         order.setCustomerId(user.getId());

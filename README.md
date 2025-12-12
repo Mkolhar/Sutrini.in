@@ -187,6 +187,15 @@ NEXT_PUBLIC_API_URL=http://localhost:8081
 
 ## 📜 Version History
 
+- **v0.3.3** (2025-12-12)
+    - Fixed Design Studio Order creation flow (Frontend & Backend).
+    - Improved 401 Unauthorized handling in API client.
+    - Updated SecurityConfig and OrderController for robust context handling.
+
+- **v0.3.2** (2025-12-12)
+    - Implemented `DesignAsset` management in Admin Dashboard (`/admin/design`).
+    - Updated DB Seed script to populate initial Design Assets (T-Shirt, Hoodie, Tote Bag).
+    - Integrated Consumer Design Studio (`/custom`) with backend dynamic assets.
 - **v0.3.1** (2025-12-12)
     - Fixed Admin Product Deletion issue by replacing native `window.confirm` with Shadcn `AlertDialog`.
     - Improved UX for delete confirmation.

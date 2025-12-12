@@ -60,4 +60,51 @@ db.products.insertMany([
     }
 ]);
 
-print("Seeding completed. Inserted " + db.products.countDocuments() + " products.");
+// ... (Product Seeding is above)
+
+print("Seeded " + db.products.countDocuments() + " products.");
+
+// --- Design Assets Seeding ---
+db.design_assets.drop();
+
+db.design_assets.insertMany([
+    {
+        _id: "asset_001",
+        name: "Classic Round Neck T-Shirt",
+        type: "tshirt",
+        mockupImageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1000&auto=format&fit=crop",
+        basePrice: NumberDecimal("499.00"),
+        printAreaTop: "24%",
+        printAreaLeft: "34%",
+        printAreaWidth: "32%",
+        printAreaHeight: "40%",
+        _class: "com.sutrini.model.DesignAsset"
+    },
+    {
+        _id: "asset_002",
+        name: "Premium Cotton Hoodie",
+        type: "hoodie",
+        mockupImageUrl: "https://plus.unsplash.com/premium_photo-1673327092929-c85d88dbb453?q=80&w=1000&auto=format&fit=crop",
+        basePrice: NumberDecimal("1299.00"),
+        printAreaTop: "28%",
+        printAreaLeft: "32%",
+        printAreaWidth: "36%",
+        printAreaHeight: "30%",
+        _class: "com.sutrini.model.DesignAsset"
+    },
+    {
+        _id: "asset_003",
+        name: "Canvas Tote Bag",
+        type: "totebag",
+        mockupImageUrl: "https://images.unsplash.com/photo-1597484662317-9bd7bdda2907?q=80&w=1000&auto=format&fit=crop",
+        basePrice: NumberDecimal("299.00"),
+        printAreaTop: "40%",
+        printAreaLeft: "25%",
+        printAreaWidth: "50%",
+        printAreaHeight: "40%",
+        _class: "com.sutrini.model.DesignAsset"
+    }
+]);
+
+print("Seeding completed. Products: " + db.products.countDocuments() + ", Design Assets: " + db.design_assets.countDocuments());
+
